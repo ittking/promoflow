@@ -204,8 +204,9 @@ dev: prepare-docker
 	@lsof -ti :3000 | xargs kill -9 2>/dev/null || true
 	@echo "✅ Previous dev services cleared"
 	@echo ""
-	@echo "🔧 Starting API server on port $(DEV_API_PORT)..."
-	@cd api && uv run flask run --host 0.0.0.0 --port $(DEV_API_PORT) --debug &
+	@echo "🔧 Starting API server on port $(DEV_API_PORT) (with Socket.IO support)..."
+	@cd api && uv run python app.py &
+	@sleep 2
 
 	@echo "🔧 Starting Celery worker..."
 	@if [ -z "$(DEV_NO_WORKER)" ]; then \
