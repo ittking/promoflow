@@ -226,11 +226,49 @@ dev-stop:
 	@lsof -ti :$(DEV_PROXY_PORT) | xargs kill -9 2>/dev/null && echo "✅ dev-proxy 已停止" || echo "ℹ️  端口 $(DEV_PROXY_PORT) 上没有 dev-proxy"
 	@lsof -ti :3000 | xargs kill -9 2>/dev/null && echo "✅ 前端开发服务器已停止" || echo "ℹ️  端口 3000 上没有前端服务"
 
+# 仅启动 API 服务 (支持 Socket.IO)
+# 使用方法: make dev-api
+# 环境变量:
+#   DEV_API_PORT - API 服务端口 (默认: 5001)
+#   PORT         - 传递给 app.py 的端口 (默认: 5001)
+#   示例: PORT=5000 make dev-api  (独立前端构建时使用端口 5000)
+.PHONY: dev-api
+dev-api:
+	@echo "🚀 正在启动 API 服务..."
+	@PORT=${PORT:-$(DEV_API_PORT)}; \
+	lsof -ti :$$PORT | xargs kill -9 2>/dev/null || true; \
+	echo "✅ 已清理端口 $$PORT 上的旧服务"; \
+	echo "🔧 正在启动 API 服务,端口 $$PORT (支持 Socket.IO)..."; \
+	cd api && PORT=$$PORT uv run python app.py
+
+.PHONY: dev-api-stop
+dev-api-stop:
+	@echo "🛑 正在停止 API 服务..."
+	@PORT=${PORT:-$(DEV_API_PORT)}; \
+	lsof -ti :$$PORT | xargs kill -9 2>/dev/null && echo "✅ API 服务已停止 (端口 $$PORT)" || echo "ℹ️  端口 $$PORT 上没有 API 服务"
+
+# 构建并启动本地前端生产服务器
+# 使用方法: make dev-start
+# 前提: 后端需在端口 5001 上运行 (make dev-api)
+# 步骤: 1. 进入 web 目录 2. 设置 NEXT_PUBLIC_API_PREFIX 3. pnpm build 4. pnpm start
+.PHONY: dev-start
+dev-start:
+	@echo "🚀 正在构建并启动前端生产服务器..."
+	@lsof -ti :3000 | xargs kill -9 2>/dev/null || true
+	@echo "✅ 已清理端口 3000 上的旧服务"
+	@echo "🔨 正在构建前端 (指向后端端口 5001)..."
+	@cd web && NEXT_PUBLIC_API_PREFIX=http://localhost:5001/console/api pnpm build
+	@echo "🌐 正在启动前端生产服务器,端口 3000..."
+	@cd web && pnpm start
+
 # 帮助目标
 help:
 	@echo "开发环境配置目标:"
 	@echo "  make dev            - 启动所有开发服务 (API + worker + dev-proxy + web)"
 	@echo "  make dev-stop       - 停止所有开发服务"
+	@echo "  make dev-api        - 仅启动 API 服务 (支持 Socket.IO, 默认端口 5001)"
+	@echo "  make dev-api-stop   - 停止 API 服务"
+	@echo "  make dev-start      - 构建并启动前端生产服务器 (指向后端端口 5001)"
 	@echo "  make dev-setup      - 运行所有后端开发环境配置步骤"
 	@echo "  make prepare-docker - 配置 Docker 中间件"
 	@echo "  make prepare-web    - 配置前端环境"
@@ -255,4 +293,4 @@ help:
 	@echo "  make build-push-all - 构建并推送所有 Docker 镜像"
 
 # 伪目标声明
-.PHONY: build-web build-api push-web push-api build-all push-all build-push-all dev dev-stop dev-setup prepare-docker prepare-web prepare-api dev-clean help format check lint api-contract-lint type-check test test-all
+.PHONY: build-web build-api push-web push-api build-all push-all build-push-all dev dev-stop dev-api dev-api-stop dev-start dev-setup prepare-docker prepare-web prepare-api dev-clean help format check lint api-contract-lint type-check test test-all
