@@ -8,6 +8,10 @@ DOCKER_MIDDLEWARE_ENV=$(DOCKER_DIR)/middleware.env
 DOCKER_MIDDLEWARE_ENV_EXAMPLE=$(DOCKER_DIR)/envs/middleware.env.example
 DOCKER_MIDDLEWARE_PROJECT=dify-middlewares-dev
 
+# Dev server ports
+DEV_API_PORT?=5001
+DEV_PROXY_PORT?=3001
+
 # Default target - show help
 .DEFAULT_GOAL := help
 
@@ -184,9 +188,48 @@ build-push-web: build-web push-web
 build-push-all: build-all push-all
 	@echo "All Docker images have been built and pushed."
 
+# Start all dev services concurrently (API + worker + dev-proxy + web)
+# Usage: make dev
+# Environment variables:
+#   DEV_API_PORT    - API server port (default: 5001)
+#   DEV_PROXY_PORT  - dev-proxy port (default: 3001)
+#   DEV_NO_WORKER   - set to any value to skip worker start
+.PHONY: dev
+dev: prepare-docker
+	@echo "🚀 Starting dify dev environment..."
+	@echo ""
+	@# Kill any existing dev services on these ports
+	@lsof -ti :$(DEV_API_PORT) | xargs kill -9 2>/dev/null || true
+	@lsof -ti :$(DEV_PROXY_PORT) | xargs kill -9 2>/dev/null || true
+	@lsof -ti :3000 | xargs kill -9 2>/dev/null || true
+	@echo "✅ Previous dev services cleared"
+	@echo ""
+	@echo "🔧 Starting API server on port $(DEV_API_PORT)..."
+	@cd api && uv run flask run --host 0.0.0.0 --port $(DEV_API_PORT) --debug &
+
+	@echo "🔧 Starting Celery worker..."
+	@if [ -z "$(DEV_NO_WORKER)" ]; then \
+		cd api && uv run celery -A app.celery worker -P gevent -c 1 --loglevel INFO -Q dataset,dataset_summary,priority_dataset,priority_pipeline,pipeline,mail,ops_trace,app_deletion,plugin,workflow_storage,conversation,workflow,schedule_poller,schedule_executor,triggered_workflow_dispatcher,trigger_refresh_executor,retention,workflow_based_app_execution & \
+	fi
+
+	@echo "🔧 Starting dev-proxy on port $(DEV_PROXY_PORT)..."
+	@cd web && DEV_PROXY_HOST=127.0.0.1 DEV_PROXY_PORT=$(DEV_PROXY_PORT) DEV_PROXY_TARGET=http://127.0.0.1:$(DEV_API_PORT) DEV_PROXY_CONSOLE_API_TARGET=http://127.0.0.1:$(DEV_API_PORT) DEV_PROXY_PUBLIC_API_TARGET=http://127.0.0.1:$(DEV_API_PORT) pnpm dev:proxy --config ./dev-proxy.config.ts --env-file ./.env.local &
+
+	@echo "🌐 Starting web dev server on port 3000..."
+	@cd web && pnpm dev
+
+.PHONY: dev-stop
+dev-stop:
+	@echo "🛑 Stopping dev services..."
+	@lsof -ti :$(DEV_API_PORT) | xargs kill -9 2>/dev/null && echo "✅ API server stopped" || echo "ℹ️  No API server on port $(DEV_API_PORT)"
+	@lsof -ti :$(DEV_PROXY_PORT) | xargs kill -9 2>/dev/null && echo "✅ dev-proxy stopped" || echo "ℹ️  No dev-proxy on port $(DEV_PROXY_PORT)"
+	@lsof -ti :3000 | xargs kill -9 2>/dev/null && echo "✅ Web dev server stopped" || echo "ℹ️  No web server on port 3000"
+
 # Help target
 help:
 	@echo "Development Setup Targets:"
+	@echo "  make dev            - Start all dev services (API + worker + dev-proxy + web)"
+	@echo "  make dev-stop       - Stop all dev services"
 	@echo "  make dev-setup      - Run all setup steps for backend dev environment"
 	@echo "  make prepare-docker - Set up Docker middleware"
 	@echo "  make prepare-web    - Set up web environment"
@@ -211,4 +254,4 @@ help:
 	@echo "  make build-push-all - Build and push all Docker images"
 
 # Phony targets
-.PHONY: build-web build-api push-web push-api build-all push-all build-push-all dev-setup prepare-docker prepare-web prepare-api dev-clean help format check lint api-contract-lint type-check test test-all
+.PHONY: build-web build-api push-web push-api build-all push-all build-push-all dev dev-stop dev-setup prepare-docker prepare-web prepare-api dev-clean help format check lint api-contract-lint type-check test test-all
