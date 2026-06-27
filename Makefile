@@ -1,4 +1,4 @@
-# Variables
+# 变量
 DOCKER_REGISTRY=langgenius
 WEB_IMAGE=$(DOCKER_REGISTRY)/dify-web
 API_IMAGE=$(DOCKER_REGISTRY)/dify-api
@@ -8,52 +8,52 @@ DOCKER_MIDDLEWARE_ENV=$(DOCKER_DIR)/middleware.env
 DOCKER_MIDDLEWARE_ENV_EXAMPLE=$(DOCKER_DIR)/envs/middleware.env.example
 DOCKER_MIDDLEWARE_PROJECT=dify-middlewares-dev
 
-# Default target - show help
+# 默认目标 - 显示帮助信息
 .DEFAULT_GOAL := help
 
-# Backend Development Environment Setup
+# 后端开发环境配置
 .PHONY: dev-setup prepare-docker prepare-web prepare-api
 
-# Dev setup target
+# 开发环境配置目标
 dev-setup: prepare-docker prepare-web prepare-api
-	@echo "✅ Backend development environment setup complete!"
+	@echo "✅ 后端开发环境配置完成！"
 
-# Step 1: Prepare Docker middleware
+# 步骤1：准备Docker中间件
 prepare-docker:
-	@echo "🐳 Setting up Docker middleware..."
+	@echo "🐳 正在设置Docker中间件..."
 	@if [ ! -f "$(DOCKER_MIDDLEWARE_ENV)" ]; then \
 		cp "$(DOCKER_MIDDLEWARE_ENV_EXAMPLE)" "$(DOCKER_MIDDLEWARE_ENV)"; \
-		echo "Docker middleware.env created"; \
+		echo "Docker middleware.env 已创建"; \
 	else \
-		echo "Docker middleware.env already exists"; \
+		echo "Docker middleware.env 已存在"; \
 	fi
 	@cd $(DOCKER_DIR) && docker compose -f docker-compose.middleware.yaml --env-file middleware.env -p $(DOCKER_MIDDLEWARE_PROJECT) up -d
-	@echo "✅ Docker middleware started"
+	@echo "✅ Docker中间件已启动"
 
-# Step 2: Prepare web environment
+# 步骤2：准备Web环境
 prepare-web:
-	@echo "🌐 Setting up web environment..."
-	@cp -n web/.env.example web/.env.local 2>/dev/null || echo "Web .env.local already exists"
+	@echo "🌐 正在设置Web环境..."
+	@cp -n web/.env.example web/.env.local 2>/dev/null || echo "Web .env.local 已存在"
 	@pnpm install
-	@echo "✅ Web environment prepared (not started)"
+	@echo "✅ Web环境已准备（未启动）"
 
-# Step 3: Prepare API environment
+# 步骤3：准备API环境
 prepare-api:
-	@echo "🔧 Setting up API environment..."
-	@cp -n api/.env.example api/.env 2>/dev/null || echo "API .env already exists"
+	@echo "🔧 正在设置API环境..."
+	@cp -n api/.env.example api/.env 2>/dev/null || echo "API .env 已存在"
 	@cd api && uv sync --dev
 	@cd api && uv run flask db upgrade
-	@echo "✅ API environment prepared (not started)"
+	@echo "✅ API环境已准备（未启动）"
 
-# Clean dev environment
+# 清理开发环境
 dev-clean:
-	@echo "⚠️  Stopping Docker containers..."
+	@echo "⚠️  正在停止Docker容器..."
 	@if [ -f "$(DOCKER_MIDDLEWARE_ENV)" ]; then \
 		cd $(DOCKER_DIR) && docker compose -f docker-compose.middleware.yaml --env-file middleware.env -p $(DOCKER_MIDDLEWARE_PROJECT) down; \
 	else \
-		echo "Docker middleware.env does not exist, skipping compose down"; \
+		echo "Docker middleware.env 不存在，跳过compose down"; \
 	fi
-	@echo "🗑️  Removing volumes..."
+	@echo "🗑️  正在删除数据卷..."
 	@rm -rf docker/volumes/db
 	@rm -rf docker/volumes/mysql
 	@rm -rf docker/volumes/redis
@@ -61,52 +61,52 @@ dev-clean:
 	@rm -rf docker/volumes/weaviate
 	@rm -rf docker/volumes/sandbox/dependencies
 	@rm -rf api/storage
-	@echo "✅ Cleanup complete"
+	@echo "✅ 清理完成"
 
-# Backend Code Quality Commands
+# 后端代码质量命令
 format:
-	@echo "🎨 Running ruff format..."
+	@echo "🎨 正在运行ruff格式化..."
 	@uv run --project api --dev ruff format ./api
-	@echo "✅ Code formatting complete"
+	@echo "✅ 代码格式化完成"
 
 check:
-	@echo "🔍 Running ruff check..."
+	@echo "🔍 正在运行ruff检查..."
 	@uv run --project api --dev ruff check ./api
-	@echo "✅ Code check complete"
+	@echo "✅ 代码检查完成"
 
 lint:
-	@echo "🔧 Running ruff format, check with fixes, response contract lint, import linter, and dotenv-linter..."
+	@echo "🔧 正在运行ruff格式化、检查修复、响应契约lint、导入检查和dotenv-linter..."
 	@uv run --project api --dev ruff format ./api
 	@uv run --project api --dev ruff check --fix ./api
 	@$(MAKE) api-contract-lint
 	@uv run --directory api --dev lint-imports
 	@uv run --project api --dev dotenv-linter ./api/.env.example ./web/.env.example
-	@echo "✅ Linting complete"
+	@echo "✅ Linting完成"
 
 api-contract-lint:
-	@echo "🔎 Linting Flask response contracts..."
+	@echo "🔎 正在检查Flask响应契约..."
 	@uv run --project api --dev python api/dev/lint_response_contracts.py
-	@echo "✅ Response contract lint complete"
+	@echo "✅ 响应契约检查完成"
 
 type-check:
-	@echo "📝 Running type checks (pyrefly + mypy)..."
+	@echo "📝 正在运行类型检查（pyrefly + mypy）..."
 	@./dev/pyrefly-check-local $(PATH_TO_CHECK)
 	@uv --directory api run mypy --exclude-gitignore --exclude '(^|/)conftest\.py$$' --exclude 'tests/' --exclude 'migrations/' --exclude 'dev/generate_swagger_specs.py' --exclude 'dev/generate_fastopenapi_specs.py' --check-untyped-defs --disable-error-code=import-untyped .
-	@echo "✅ Type checks complete"
+	@echo "✅ 类型检查完成"
 
 type-check-core:
-	@echo "📝 Running core type checks (pyrefly + mypy)..."
+	@echo "📝 正在运行核心类型检查（pyrefly + mypy）..."
 	@./dev/pyrefly-check-local $(PATH_TO_CHECK)
 	@uv --directory api run mypy --exclude-gitignore --exclude '(^|/)conftest\.py$$' --exclude 'tests/' --exclude 'migrations/' --exclude 'dev/generate_swagger_specs.py' --exclude 'dev/generate_fastopenapi_specs.py' --check-untyped-defs --disable-error-code=import-untyped .
-	@echo "✅ Core type checks complete"
+	@echo "✅ 核心类型检查完成"
 
 test:
-	@echo "🧪 Running backend unit tests..."
+	@echo "🧪 正在运行后端单元测试..."
 	@if [ -n "$(TARGET_TESTS)" ]; then \
-		echo "Target: $(TARGET_TESTS)"; \
+		echo "目标: $(TARGET_TESTS)"; \
 		uv run --project api --dev pytest $(TARGET_TESTS); \
 	else \
-		echo "Running backend unit tests"; \
+		echo "正在运行后端单元测试"; \
 		uv run --project api --dev pytest -p no:benchmark --timeout "$${PYTEST_TIMEOUT:-20}" -n auto \
 			api/tests/unit_tests \
 			api/providers/vdb/*/tests/unit_tests \
@@ -115,15 +115,15 @@ test:
 		uv run --project api --dev pytest --timeout "$${PYTEST_TIMEOUT:-20}" --cov-append \
 			api/tests/unit_tests/controllers; \
 	fi
-	@echo "✅ Unit tests complete"
+	@echo "✅ 单元测试完成"
 
 test-all:
-	@echo "🧪 Running full backend test suite..."
+	@echo "🧪 正在运行完整后端测试套件..."
 	@if [ -n "$(TARGET_TESTS)" ]; then \
-		echo "Target: $(TARGET_TESTS)"; \
+		echo "目标: $(TARGET_TESTS)"; \
 		uv run --project api --dev pytest $(TARGET_TESTS); \
 	else \
-		echo "Running backend unit tests"; \
+		echo "正在运行后端单元测试"; \
 		uv run --project api --dev pytest -p no:benchmark --timeout "$${PYTEST_TIMEOUT:-20}" -n auto \
 			api/tests/unit_tests \
 			api/providers/vdb/*/tests/unit_tests \
@@ -131,14 +131,14 @@ test-all:
 			--ignore=api/tests/unit_tests/controllers; \
 		uv run --project api --dev pytest --timeout "$${PYTEST_TIMEOUT:-20}" --cov-append \
 			api/tests/unit_tests/controllers; \
-		echo "Running backend integration tests"; \
+		echo "正在运行后端集成测试"; \
 		uv run --project api --dev pytest -p no:benchmark --start-middleware -n auto \
 			--timeout "$${PYTEST_TIMEOUT:-180}" \
 			--cov-append \
 			api/tests/integration_tests/workflow \
 			api/tests/integration_tests/tools \
 			api/tests/test_containers_integration_tests; \
-		echo "Running VDB smoke tests"; \
+		echo "正在运行VDB冒烟测试"; \
 		uv run --project api --dev pytest --start-vdb \
 			--timeout "$${PYTEST_TIMEOUT:-180}" \
 			--cov-append \
@@ -147,68 +147,68 @@ test-all:
 			api/providers/vdb/vdb-qdrant/tests/integration_tests \
 			api/providers/vdb/vdb-weaviate/tests/integration_tests; \
 	fi
-	@echo "✅ Tests complete"
+	@echo "✅ 测试完成"
 
-# Build Docker images
+# 构建Docker镜像
 build-web:
-	@echo "Building web Docker image: $(WEB_IMAGE):$(VERSION)..."
+	@echo "正在构建Web Docker镜像: $(WEB_IMAGE):$(VERSION)..."
 	docker build -f web/Dockerfile -t $(WEB_IMAGE):$(VERSION) .
-	@echo "Web Docker image built successfully: $(WEB_IMAGE):$(VERSION)"
+	@echo "Web Docker镜像构建成功: $(WEB_IMAGE):$(VERSION)"
 
 build-api:
-	@echo "Building API Docker image: $(API_IMAGE):$(VERSION)..."
+	@echo "正在构建API Docker镜像: $(API_IMAGE):$(VERSION)..."
 	docker build -t $(API_IMAGE):$(VERSION) -f api/Dockerfile .
-	@echo "API Docker image built successfully: $(API_IMAGE):$(VERSION)"
+	@echo "API Docker镜像构建成功: $(API_IMAGE):$(VERSION)"
 
-# Push Docker images
+# 推送Docker镜像
 push-web:
-	@echo "Pushing web Docker image: $(WEB_IMAGE):$(VERSION)..."
+	@echo "正在推送Web Docker镜像: $(WEB_IMAGE):$(VERSION)..."
 	docker push $(WEB_IMAGE):$(VERSION)
-	@echo "Web Docker image pushed successfully: $(WEB_IMAGE):$(VERSION)"
+	@echo "Web Docker镜像推送成功: $(WEB_IMAGE):$(VERSION)"
 
 push-api:
-	@echo "Pushing API Docker image: $(API_IMAGE):$(VERSION)..."
+	@echo "正在推送API Docker镜像: $(API_IMAGE):$(VERSION)..."
 	docker push $(API_IMAGE):$(VERSION)
-	@echo "API Docker image pushed successfully: $(API_IMAGE):$(VERSION)"
+	@echo "API Docker镜像推送成功: $(API_IMAGE):$(VERSION)"
 
-# Build all images
+# 构建所有镜像
 build-all: build-web build-api
 
-# Push all images
+# 推送所有镜像
 push-all: push-web push-api
 
 build-push-api: build-api push-api
 build-push-web: build-web push-web
 
-# Build and push all images
+# 构建并推送所有镜像
 build-push-all: build-all push-all
-	@echo "All Docker images have been built and pushed."
+	@echo "所有Docker镜像已构建并推送完成。"
 
-# Help target
+# 帮助目标
 help:
-	@echo "Development Setup Targets:"
-	@echo "  make dev-setup      - Run all setup steps for backend dev environment"
-	@echo "  make prepare-docker - Set up Docker middleware"
-	@echo "  make prepare-web    - Set up web environment"
-	@echo "  make prepare-api    - Set up API environment"
-	@echo "  make dev-clean      - Stop Docker middleware containers and remove dev data"
+	@echo "开发环境配置目标："
+	@echo "  make dev-setup      - 运行后端开发环境的所有配置步骤"
+	@echo "  make prepare-docker - 设置Docker中间件"
+	@echo "  make prepare-web    - 设置Web环境"
+	@echo "  make prepare-api    - 设置API环境"
+	@echo "  make dev-clean      - 停止Docker中间件容器并删除开发数据"
 	@echo ""
-	@echo "Backend Code Quality:"
-	@echo "  make format         - Format code with ruff"
-	@echo "  make check          - Check code with ruff"
-	@echo "  make lint           - Format, fix, and lint code (ruff, imports, dotenv)"
-	@echo "  make api-contract-lint - Check Flask response docs against returned schemas"
-	@echo "  make type-check     - Run type checks (pyrefly, mypy)"
-	@echo "  make type-check-core - Run core type checks (pyrefly, mypy)"
-	@echo "  make test           - Run backend unit tests (or TARGET_TESTS=./api/tests/<target_tests>)"
-	@echo "  make test-all       - Run full backend tests, including Docker-backed suites"
+	@echo "后端代码质量："
+	@echo "  make format         - 使用ruff格式化代码"
+	@echo "  make check          - 使用ruff检查代码"
+	@echo "  make lint           - 格式化、修复并lint代码（ruff、imports、dotenv）"
+	@echo "  make api-contract-lint - 检查Flask响应文档与返回模式的一致性"
+	@echo "  make type-check     - 运行类型检查（pyrefly、mypy）"
+	@echo "  make type-check-core - 运行核心类型检查（pyrefly、mypy）"
+	@echo "  make test           - 运行后端单元测试（或 TARGET_TESTS=./api/tests/<目标测试>）"
+	@echo "  make test-all       - 运行完整后端测试，包括Docker支持套件"
 	@echo ""
-	@echo "Docker Build Targets:"
-	@echo "  make build-web      - Build web Docker image"
-	@echo "  make build-api      - Build API Docker image"
-	@echo "  make build-all      - Build all Docker images"
-	@echo "  make push-all       - Push all Docker images"
-	@echo "  make build-push-all - Build and push all Docker images"
+	@echo "Docker构建目标："
+	@echo "  make build-web      - 构建Web Docker镜像"
+	@echo "  make build-api      - 构建API Docker镜像"
+	@echo "  make build-all      - 构建所有Docker镜像"
+	@echo "  make push-all       - 推送所有Docker镜像"
+	@echo "  make build-push-all - 构建并推送所有Docker镜像"
 
-# Phony targets
+# 伪目标
 .PHONY: build-web build-api push-web push-api build-all push-all build-push-all dev-setup prepare-docker prepare-web prepare-api dev-clean help format check lint api-contract-lint type-check test test-all
