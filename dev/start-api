@@ -5,7 +5,17 @@ set -x
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 cd "$SCRIPT_DIR/../api"
 
+# 检查端口 5001 是否被占用
+PORT=5001
+PID=$(lsof -ti :$PORT 2>/dev/null)
+
+if [ -n "$PID" ]; then
+    echo "端口 $PORT 被占用 (PID: $PID)，正在关闭..."
+    kill $PID 2>/dev/null
+    sleep 1
+fi
+
 uv run flask db upgrade
 
 uv run \
-  flask run --host 0.0.0.0 --port=5001 --debug
+  flask run --host 0.0.0.0 --port=$PORT --debug
