@@ -1,5 +1,5 @@
 {
-  "name": "dify",
+  "name": "promoflow",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@11.8.0",
