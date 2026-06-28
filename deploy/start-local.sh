@@ -7,22 +7,19 @@ echo "========================================"
 echo "PromoFlow 本地测试部署"
 echo "========================================"
 
-# 检查 .env.local 是否存在
-if [ ! -f ".env.local" ]; then
-    echo "错误: .env.local 文件不存在"
+# 检查 .env.example 是否存在
+if [ ! -f ".env.example" ]; then
+    echo "错误: .env.example 文件不存在"
     echo "请确保在 deploy 目录下运行此脚本"
     exit 1
 fi
 
-# 备份现有的 .env（如果存在）
-if [ -f ".env" ]; then
-    cp .env .env.backup
-    echo "已备份 .env 到 .env.backup"
+# 检查 .env 是否存在
+if [ ! -f ".env" ]; then
+    echo "错误: .env 文件不存在"
+    echo "请先创建 .env 文件"
+    exit 1
 fi
-
-# 复制 .env.local 为 .env
-cp .env.local .env
-echo "已使用 .env.local 配置"
 
 echo ""
 echo "正在启动服务..."
