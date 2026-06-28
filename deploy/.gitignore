@@ -1,0 +1,14 @@
+# Environment files (contain sensitive configuration)
+.env
+.env.backup
+.env.local
+.envs/
+
+# Docker volumes (runtime data)
+volumes/
+
+# Runtime configuration
+ssrf_proxy/squid.conf
+
+# Local scripts (if any)
+start-local.sh
