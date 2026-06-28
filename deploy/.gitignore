@@ -1,6 +1,4 @@
 # Environment files (contain sensitive configuration)
-.env
-.env.backup
 .env.local
 .envs/
 
