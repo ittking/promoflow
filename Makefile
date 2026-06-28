@@ -216,37 +216,27 @@ push-aliyun-api:
 	docker push $(ALIYUN_API_IMAGE):$(VERSION)
 	@echo "阿里云API Docker镜像推送成功: $(ALIYUN_API_IMAGE):$(VERSION)"
 
-# 构建所有阿里云镜像（包含所有基础镜像）
-build-aliyun-all: build-aliyun-web build-aliyun-api build-aliyun-base
+# 构建所有阿里云镜像（只构建自定义镜像，公共镜像从 Docker Hub 拉取）
+build-aliyun-all: build-aliyun-web build-aliyun-api build-aliyun-custom
 
-# 构建阿里云基础镜像
-build-aliyun-base:
-	@echo "正在构建/拉取阿里云基础镜像..."
-	@docker pull postgres:15-alpine && docker tag postgres:15-alpine $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/postgres:15-alpine
-	@docker pull redis:6-alpine && docker tag redis:6-alpine $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/redis:6-alpine
-	@docker pull nginx:latest && docker tag nginx:latest $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/nginx:latest
-	@docker pull ubuntu/squid:latest && docker tag ubuntu/squid:latest $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/ubuntu-squid:latest
-	@docker pull busybox:latest && docker tag busybox:latest $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/busybox:latest
+# 构建阿里云自定义基础镜像（sandbox, plugin-daemon）
+# 公共镜像（postgres, redis, nginx, squid, busybox, weaviate）直接从 Docker Hub 拉取
+build-aliyun-custom:
+	@echo "正在构建阿里云自定义基础镜像（sandbox, plugin-daemon）..."
 	@docker pull langgenius/dify-sandbox:0.2.15 && docker tag langgenius/dify-sandbox:0.2.15 $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/dify-sandbox:0.2.15
 	@docker pull langgenius/dify-plugin-daemon:0.6.3-local && docker tag langgenius/dify-plugin-daemon:0.6.3-local $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/dify-plugin-daemon:0.6.3-local
-	@docker pull semitechnologies/weaviate:1.27.0 && docker tag semitechnologies/weaviate:1.27.0 $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/weaviate:1.27.0
-	@echo "阿里云基础镜像构建完成"
+	@echo "阿里云自定义基础镜像构建完成"
 
-# 推送所有阿里云镜像（包含所有基础镜像）
-push-aliyun-all: push-aliyun-web push-aliyun-api push-aliyun-base
+# 推送所有阿里云镜像（只推送自定义镜像，公共镜像从 Docker Hub 拉取）
+push-aliyun-all: push-aliyun-web push-aliyun-api push-aliyun-custom
 
-# 推送阿里云基础镜像（postgres, redis, nginx, squid, busybox, sandbox, plugin-daemon, weaviate）
-push-aliyun-base:
-	@echo "正在推送阿里云基础镜像..."
-	@docker tag postgres:15-alpine $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/postgres:15-alpine && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/postgres:15-alpine
-	@docker tag redis:6-alpine $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/redis:6-alpine && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/redis:6-alpine
-	@docker tag nginx:latest $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/nginx:latest && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/nginx:latest
-	@docker tag ubuntu/squid:latest $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/ubuntu-squid:latest && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/ubuntu-squid:latest
-	@docker tag busybox:latest $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/busybox:latest && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/busybox:latest
+# 推送阿里云自定义基础镜像（sandbox, plugin-daemon）
+# 公共镜像（postgres, redis, nginx, squid, busybox, weaviate）直接从 Docker Hub 拉取，无需推送
+push-aliyun-custom:
+	@echo "正在推送阿里云自定义基础镜像（sandbox, plugin-daemon）..."
 	@docker tag langgenius/dify-sandbox:0.2.15 $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/dify-sandbox:0.2.15 && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/dify-sandbox:0.2.15
 	@docker tag langgenius/dify-plugin-daemon:0.6.3-local $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/dify-plugin-daemon:0.6.3-local && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/dify-plugin-daemon:0.6.3-local
-	@docker pull semitechnologies/weaviate:1.27.0 && docker tag semitechnologies/weaviate:1.27.0 $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/weaviate:1.27.0 && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/weaviate:1.27.0
-	@echo "阿里云基础镜像推送成功"
+	@echo "阿里云自定义基础镜像推送成功"
 
 # 构建并推送阿里云所有镜像
 build-push-aliyun-all: build-aliyun-all push-aliyun-all
@@ -281,15 +271,15 @@ help:
 	@echo "  make build-push-all - 构建并推送所有Docker镜像"
 	@echo ""
 	@echo "阿里云镜像构建目标："
-	@echo "  make build-aliyun-web       - 构建阿里云Web镜像"
-	@echo "  make build-aliyun-api       - 构建阿里云API镜像"
-	@echo "  make build-aliyun-base      - 构建阿里云基础镜像(postgres,redis,nginx等)"
-	@echo "  make build-aliyun-all       - 构建所有阿里云镜像(含基础镜像)"
-	@echo "  make push-aliyun-web        - 推送阿里云Web镜像"
-	@echo "  make push-aliyun-api        - 推送阿里云API镜像"
-	@echo "  make push-aliyun-base       - 推送阿里云基础镜像"
-	@echo "  make push-aliyun-all        - 推送所有阿里云镜像(含基础镜像)"
-	@echo "  make build-push-aliyun-all  - 构建并推送所有阿里云镜像(完整部署镜像)"
+	@echo "  make build-aliyun-web       - 构建阿里云Web镜像（自定义）"
+	@echo "  make build-aliyun-api       - 构建阿里云API镜像（自定义）"
+	@echo "  make build-aliyun-custom    - 构建阿里云自定义基础镜像（sandbox, plugin-daemon）"
+	@echo "  make build-aliyun-all       - 构建所有阿里云镜像（自定义镜像）"
+	@echo "  make push-aliyun-web        - 推送阿里云Web镜像（自定义）"
+	@echo "  make push-aliyun-api        - 推送阿里云API镜像（自定义）"
+	@echo "  make push-aliyun-custom     - 推送阿里云自定义基础镜像"
+	@echo "  make push-aliyun-all        - 推送所有阿里云镜像（自定义镜像）"
+	@echo "  make build-push-aliyun-all  - 构建并推送所有阿里云镜像（自定义镜像）"
 
 # 伪目标
 .PHONY: build-web build-api push-web push-api build-all push-all build-push-all dev-setup prepare-docker prepare-web prepare-api dev-clean help format check lint api-contract-lint type-check test test-all

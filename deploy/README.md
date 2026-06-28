@@ -2,12 +2,39 @@
 
 本目录包含 PromoFlow 在甲方服务器上部署所需的所有文件。
 
+## 镜像说明
+
+### 自定义镜像（从阿里云拉取）
+
+这些镜像需要本地构建后推送到阿里云仓库：
+
+| 镜像 | 说明 |
+|------|------|
+| `dify-api` | 后端 API 服务（本地代码构建） |
+| `dify-web` | 前端 Web 应用（本地代码构建） |
+| `dify-sandbox` | 代码执行沙箱 |
+| `dify-plugin-daemon` | 插件服务 |
+
+### 公共镜像（从 Docker Hub 拉取）
+
+部署时会自动从 Docker Hub 拉取，无需手动处理：
+
+| 镜像 | 说明 |
+|------|------|
+| `postgres:15-alpine` | PostgreSQL 数据库 |
+| `redis:6-alpine` | Redis 缓存 |
+| `nginx:latest` | 反向代理 |
+| `ubuntu/squid` | SSRF 防护代理 |
+| `busybox:latest` | 初始化工具 |
+| `semitechnologies/weaviate:1.27.0` | 向量数据库 |
+
 ## 目录结构
 
 ```
 deploy/
 ├── docker-compose.yaml    # Docker 编排文件
 ├── .env                   # 主环境变量配置
+├── .env.local             # 本地测试环境配置
 ├── .envs/                 # 细分环境变量
 │   ├── shared.env
 │   ├── api.env
@@ -31,6 +58,7 @@ deploy/
 │   ├── plugin_daemon/
 │   ├── weaviate/
 │   └── certbot/
+├── start-local.sh         # 本地测试启动脚本
 └── README.md              # 本文件
 ```
 
@@ -39,11 +67,11 @@ deploy/
 ### 前提条件
 
 - 服务器已安装 Docker 和 Docker Compose
-- 服务器能够访问阿里云镜像仓库
+- 服务器能够访问 Docker Hub 和阿里云镜像仓库
 
 ### 部署步骤
 
-#### 1. 登录阿里云镜像仓库
+#### 1. 登录阿里云镜像仓库（只需一次）
 
 ```bash
 docker login --username=17602235676 crpi-ey5cq37q6clixvfc.cn-shanghai.personal.cr.aliyuncs.com
@@ -83,6 +111,31 @@ docker compose logs -f
 ```
 
 访问 `http://服务器IP或域名` 应该能看到 PromoFlow 界面。
+
+## 本地测试
+
+```bash
+# 使用本地测试配置启动
+./start-local.sh
+```
+
+## 本地构建并推送镜像
+
+```bash
+# 登录阿里云
+docker login --username=17602235676 crpi-ey5cq37q6clixvfc.cn-shanghai.personal.cr.aliyuncs.com
+
+# 构建并推送所有自定义镜像到阿里云
+make build-push-aliyun-all
+```
+
+这会构建并推送以下自定义镜像：
+- `dify-api:latest`
+- `dify-web:latest`
+- `dify-sandbox:0.2.15`
+- `dify-plugin-daemon:0.6.3-local`
+
+公共镜像无需推送，部署时会自动从 Docker Hub 拉取。
 
 ## 常用命令
 
@@ -138,7 +191,7 @@ sleep 10
 docker compose up -d
 ```
 
-### 镜像拉取失败
+### 自定义镜像拉取失败
 
 ```bash
 # 重新登录阿里云
@@ -147,6 +200,20 @@ docker login --username=17602235676 crpi-ey5cq37q6clixvfc.cn-shanghai.personal.c
 
 # 手动拉取镜像测试
 docker pull crpi-ey5cq37q6clixvfc.cn-shanghai.personal.cr.aliyuncs.com/mnwm/dify-api:latest
+```
+
+### 公共镜像拉取失败
+
+如果 Docker Hub 访问缓慢或失败，可以配置国内镜像加速器：
+
+```bash
+# 编辑 /etc/docker/daemon.json
+{
+  "registry-mirrors": ["https://docker.1ms.run"]
+}
+
+# 重启 Docker
+sudo systemctl restart docker
 ```
 
 ## 数据备份
