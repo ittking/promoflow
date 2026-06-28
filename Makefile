@@ -229,12 +229,13 @@ build-aliyun-base:
 	@docker pull busybox:latest && docker tag busybox:latest $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/busybox:latest
 	@docker pull langgenius/dify-sandbox:0.2.15 && docker tag langgenius/dify-sandbox:0.2.15 $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/dify-sandbox:0.2.15
 	@docker pull langgenius/dify-plugin-daemon:0.6.3-local && docker tag langgenius/dify-plugin-daemon:0.6.3-local $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/dify-plugin-daemon:0.6.3-local
+	@docker pull semitechnologies/weaviate:1.27.0 && docker tag semitechnologies/weaviate:1.27.0 $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/weaviate:1.27.0
 	@echo "阿里云基础镜像构建完成"
 
 # 推送所有阿里云镜像（包含所有基础镜像）
 push-aliyun-all: push-aliyun-web push-aliyun-api push-aliyun-base
 
-# 推送阿里云基础镜像（postgres, redis, nginx, squid, busybox, sandbox, plugin-daemon）
+# 推送阿里云基础镜像（postgres, redis, nginx, squid, busybox, sandbox, plugin-daemon, weaviate）
 push-aliyun-base:
 	@echo "正在推送阿里云基础镜像..."
 	@docker tag postgres:15-alpine $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/postgres:15-alpine && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/postgres:15-alpine
@@ -244,6 +245,7 @@ push-aliyun-base:
 	@docker tag busybox:latest $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/busybox:latest && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/busybox:latest
 	@docker tag langgenius/dify-sandbox:0.2.15 $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/dify-sandbox:0.2.15 && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/dify-sandbox:0.2.15
 	@docker tag langgenius/dify-plugin-daemon:0.6.3-local $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/dify-plugin-daemon:0.6.3-local && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/dify-plugin-daemon:0.6.3-local
+	@docker pull semitechnologies/weaviate:1.27.0 && docker tag semitechnologies/weaviate:1.27.0 $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/weaviate:1.27.0 && docker push $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/weaviate:1.27.0
 	@echo "阿里云基础镜像推送成功"
 
 # 构建并推送阿里云所有镜像
