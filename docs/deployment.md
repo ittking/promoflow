@@ -211,7 +211,15 @@ docker compose ps
 docker compose logs -f
 ```
 
-#### 5. 验证部署
+#### 5. 执行数据库迁移
+
+首次部署或更新数据库结构后，需要执行数据库迁移：
+
+```bash
+docker compose exec api flask db upgrade
+```
+
+#### 6. 验证部署
 
 访问 `http://甲方服务器IP` 或配置的域名，确认 Web 界面正常显示。
 
@@ -302,6 +310,16 @@ docker compose up -d
 **问题：** 页面显示不正常或资源加载失败
 
 **解决：** 检查 `.env` 中的 URL 配置是否正确，包括协议（http/https）和端口。
+
+### 6. 页面报错或接口 400 错误
+
+**问题：** 部署后页面报错，部分接口返回 400 错误
+
+**解决：** 可能是数据库未迁移导致，执行：
+
+```bash
+docker compose exec api flask db upgrade
+```
 
 ---
 

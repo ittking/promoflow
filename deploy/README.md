@@ -100,7 +100,15 @@ NGINX_SERVER_NAME=你的服务器IP或域名
 docker compose up -d
 ```
 
-#### 4. 验证部署
+#### 4. 执行数据库迁移
+
+首次部署或更新数据库结构后，需要执行数据库迁移：
+
+```bash
+docker compose exec api flask db upgrade
+```
+
+#### 5. 验证部署
 
 ```bash
 # 查看服务状态
@@ -189,6 +197,14 @@ netstat -tlnp | grep -E '80|443|5001'
 docker compose up -d db_postgres
 sleep 10
 docker compose up -d
+```
+
+### 页面报错或接口 400 错误
+
+可能是数据库未迁移导致，检查并执行：
+
+```bash
+docker compose exec api flask db upgrade
 ```
 
 ### 自定义镜像拉取失败
